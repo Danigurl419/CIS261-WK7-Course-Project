@@ -1,101 +1,125 @@
-import datetime
-
-# Function to validate date format
-def validate_date(date_text):
-    try:
-        datetime.datetime.strptime(date_text, '%m/%d/%Y')
-        return True
-    except ValueError:
-        return False
-
-# Function to generate the report
-def generate_report():
-    from_date = input("Enter the From Date (mm/dd/yyyy) or 'All': ")
-    
-    # Validate the date format if not "All"
-    if from_date.lower() != "all" and not validate_date(from_date):
-        print("Invalid date format. Please enter a valid date in mm/dd/yyyy format.")
-        return
-    
-    print("\nPayroll Report:")
-    print("-" * 50)
-
-    try:
-        with open("employee_payroll.txt", "r") as file:
-            totals = {
-                "total_employees": 0,
-                "total_hours_worked": 0,
-                "total_income_taxes": 0,
-                "total_net_pay": 0
-            }
-            
-            for line in file:
-                record_date, employee_name, hours_worked, hourly_rate, income_tax_rate = line.strip().split("|")
-                if from_date.lower() == "all" or from_date == record_date:
-                    # Compute payroll details
-                    gross_pay = float(hours_worked) * float(hourly_rate)
-                    income_taxes = (float(income_tax_rate) / 100) * gross_pay
-                    net_pay = gross_pay - income_taxes
-                    
-                    # Display employee's payroll details
-                    print(f"Date: {record_date}")
-                    print(f"Employee Name: {employee_name}")
-                    print(f"Hours Worked: {hours_worked}")
-                    print(f"Hourly Rate: ${float(hourly_rate):.2f}")
-                    print(f"Gross Pay: ${gross_pay:.2f}")
-                    print(f"Income Tax Rate: {float(income_tax_rate):.2f}%")
-                    print(f"Income Taxes: ${income_taxes:.2f}")
-                    print(f"Net Pay: ${net_pay:.2f}")
-                    print("-" * 30)
-                    
-                    # Update totals
-                    totals["total_employees"] += 1
-                    totals["total_hours_worked"] += float(hours_worked)
-                    totals["total_income_taxes"] += income_taxes
-                    totals["total_net_pay"] += net_pay
-            
-            # Display summary of totals
-            print("\nSummary of Totals:")
-            print(f"Total Employees: {totals['total_employees']}")
-            print(f"Total Hours Worked: {totals['total_hours_worked']:.2f}")
-            print(f"Total Income Taxes: ${totals['total_income_taxes']:.2f}")
-            print(f"Total Net Pay: ${totals['total_net_pay']:.2f}")
-
-    except FileNotFoundError:
-        print("No records found. Please enter employee data first.")
-
 def main():
     print("Welcome to the Payroll Automation System!")
     print("Enter employee details below.")
     
-    # Open file in append mode to retain previous data
-    with open("employee_payroll.txt", "a") as file:
+    # Initialization of totals
+    total_employees = 0
+    total_hours_worked = 0
+    total_gross_pay = 0
+    total_income_taxes = 0
+    total_net_pay = 0
+    
+    with open("employee_data.txt", "a") as file:
         while True:
+            # Input employee details
             employee_name = input("Enter employee name (or type 'End' to finish): ")
+            
+            # Exit condition
             if employee_name.lower() == "end":
                 break
             
             try:
-                # Input details
-                from_date = input("Enter record date (mm/dd/yyyy): ")
-                if not validate_date(from_date):
-                    print("Invalid date format. Please try again.")
-                    continue
-
                 hours_worked = float(input("Enter hours worked: "))
                 hourly_rate = float(input("Enter hourly rate: "))
                 income_tax_rate = float(input("Enter income tax rate (%): "))
+                from_date = input("Enter from date (mm/dd/yyyy): ")
+                to_date = input("Enter to date (mm/dd/yyyy): ")
                 
-                # Write details in pipe-delimited format
-                file.write(f"{from_date}|{employee_name}|{hours_worked}|{hourly_rate}|{income_tax_rate}\n")
-                print("Record saved.\n")
+                # Calculations
+                gross_pay = hours_worked * hourly_rate
+                income_taxes = (income_tax_rate / 100) * gross_pay
+                net_pay = gross_pay - income_taxes
+                
+                # Write to file
+                file.write(f"{from_date}|{to_date}|{employee_name}|{hours_worked}|{hourly_rate}|{income_tax_rate}\n")
+                
+                # Display employee payroll details
+                print("\nPayroll Details:")
+                print(f"Employee Name: {employee_name}")
+                print(f"Hours Worked: {hours_worked:.2f}")
+                print(f"Hourly Rate: ${hourly_rate:.2f}")
+                print(f"Gross Pay: ${gross_pay:.2f}")
+                print(f"Income Tax Rate: {income_tax_rate:.2f}%")
+                print(f"Income Taxes: ${income_taxes:.2f}")
+                print(f"Net Pay: ${net_pay:.2f}")
+                print("-" * 30)
+                
+                # Update totals
+                total_employees += 1
+                total_hours_worked += hours_worked
+                total_gross_pay += gross_pay
+                total_income_taxes += income_taxes
+                total_net_pay += net_pay
             
             except ValueError:
                 print("Invalid input. Please enter numerical values for hours, rate, and tax rate.\n")
     
-    # Generate report after data entry
+    # Final Summary
+    print("\nPayroll Summary for All Employees:")
+    print(f"Total Employees: {total_employees}")
+    print(f"Total Hours Worked: {total_hours_worked:.2f}")
+    print(f"Total Gross Pay: ${total_gross_pay:.2f}")
+    print(f"Total Income Taxes: ${total_income_taxes:.2f}")
+    print(f"Total Net Pay: ${total_net_pay:.2f}")
+    print("Thank you for using the Payroll Automation System!")
+    
+    # Generate report
     generate_report()
 
-# Run program
+def generate_report():
+    from_date_input = input("Enter From Date (mm/dd/yyyy) for the report (or type 'All' for all records): ")
+    
+    if from_date_input.lower() != "all":
+        if not re.match(r"\d{2}/\d{2}/\d{4}", from_date_input):
+            print("Invalid date format. Please enter the date in mm/dd/yyyy format.")
+            return
+    
+    total_employees = 0
+    total_hours_worked = 0
+    total_gross_pay = 0
+    total_income_taxes = 0
+    total_net_pay = 0
+    
+    with open("employee_data.txt", "r") as file:
+        for line in file:
+            from_date, to_date, employee_name, hours_worked, hourly_rate, income_tax_rate = line.strip().split("|")
+            hours_worked = float(hours_worked)
+            hourly_rate = float(hourly_rate)
+            income_tax_rate = float(income_tax_rate)
+            
+            if from_date_input.lower() == "all" or from_date == from_date_input:
+                gross_pay = hours_worked * hourly_rate
+                income_taxes = (income_tax_rate / 100) * gross_pay
+                net_pay = gross_pay - income_taxes
+                
+                # Display employee payroll details
+                print("\nPayroll Details:")
+                print(f"From Date: {from_date}")
+                print(f"To Date: {to_date}")
+                print(f"Employee Name: {employee_name}")
+                print(f"Hours Worked: {hours_worked:.2f}")
+                print(f"Hourly Rate: ${hourly_rate:.2f}")
+                print(f"Gross Pay: ${gross_pay:.2f}")
+                print(f"Income Tax Rate: {income_tax_rate:.2f}%")
+                print(f"Income Taxes: ${income_taxes:.2f}")
+                print(f"Net Pay: ${net_pay:.2f}")
+                print("-" * 30)
+                
+                # Update totals
+                total_employees += 1
+                total_hours_worked += hours_worked
+                total_gross_pay += gross_pay
+                total_income_taxes += income_taxes
+                total_net_pay += net_pay
+    
+    # Final Summary
+    print("\nPayroll Summary for Selected Employees:")
+    print(f"Total Employees: {total_employees}")
+    print(f"Total Hours Worked: {total_hours_worked:.2f}")
+    print(f"Total Gross Pay: ${total_gross_pay:.2f}")
+    print(f"Total Income Taxes: ${total_income_taxes:.2f}")
+    print(f"Total Net Pay: ${total_net_pay:.2f}")
+
+# Run the program
 if __name__ == "__main__":
     main()
